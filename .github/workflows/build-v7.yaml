@@ -1,0 +1,29 @@
+name: Build v7 APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-android-v7:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      - uses: subosito/flutter-action@v2.16.0
+        id: flutter-action
+        with:
+          channel: stable
+          flutter-version-file: pubspec.yaml
+      - run: flutter pub get
+      - run: sudo apt-get update && sudo apt-get install -y clang cmake ninja-build
+      - run: sed -i -e 's/-Wl,/-Wl,--build-id=none,/' ${{ steps.flutter-action.outputs.PUB-CACHE-PATH }}/hosted/pub.dev/jni-*/src/CMakeLists.txt
+      - run: flutter build apk --split-per-abi --dart-define=DANDANAPI_APPID= --dart-define=DANDANAPI_KEY= --dart-define=KAZUMI_APPID= --dart-define=KAZUMI_KEY=
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kazumi-armeabi-v7a
+          path: build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
